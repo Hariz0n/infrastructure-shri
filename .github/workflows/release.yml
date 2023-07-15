@@ -24,8 +24,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           changelog: ${{ steps.changelog.outputs.clean_changelog }}
+          tag: ${{ steps.changelog.outputs.tag }}
+          release_date: ${{ github.event.repository.updated_at }}
+          release_version: ${{ steps.changelog.outputs.version }}
         with:
-          assignees: ${{ github.event.release.author.login }}
+          assignees: "${{ github.event.release.author.login }}"
           update_existing: true
           search_existing: all
           filename: .github/templates/issue.md
@@ -89,7 +92,7 @@ jobs:
       - name: Install packages
         run: npm ci
       - name: Run commit check
-        run: npx commitlint --from ${{ github.event.pull_request.head.sha }}~${{ github.event.pull_request.commits }} --to ${{ github.event.pull_request.head.sha }} --verbose
+        run: npx commitlint --from HEAD~1 --to HEAD --verbose
   build:
     needs: [unit-tests, e2e-tests, commit-lint]
     name: Build app

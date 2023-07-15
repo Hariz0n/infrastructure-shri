@@ -2,7 +2,11 @@
 title: Release {{ payload.sender.login }}
 labels: RELEASE
 ---
-Someone just pushed, oh no! Here's who did it: {{ payload.sender.login }}.
-### Changelog: 
+## Information 
+### Author - {{ env.author }}
+### Date - {{ env.release_date }}
+### Version - {{ env.release_version }}
+
+## Changelog: 
 
 {{ env.changelog }}
