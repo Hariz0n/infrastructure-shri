@@ -29,6 +29,9 @@ jobs:
           release_date: ${{ github.event.repository.updated_at}}
           release_version: ${{ steps.changelog.outputs.version }}
         with:
+          assignees: ${{ github.event.release.author.login }}
+          update_existing: true
+          search_existing: all
           filename: .github/templates/issue.md
 
   unit-tests:
