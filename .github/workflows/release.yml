@@ -1,0 +1,128 @@
+on:
+  push:
+    tags:
+      - 'v\d+'
+jobs:
+  create-registy:
+    name: Create registry
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout
+        with:
+          fetch-depth: 0
+      - uses: TriPSs/conventional-changelog-action@v3
+        name: Conventional Changelog Action
+        id: changelog
+        with:
+          github-token: ${{ secrets.github_token }}
+          skip-git-pull: "true"
+          output-file: "false"
+      - uses: JasonEtco/create-an-issue@v2.9.1
+        name: Create an issue
+        env:
+          github-token: ${{ secrets.github_token }}
+          changelog: ${{ steps.changelog.outputs.clean_changelog }}
+          tag: ${{ steps.changelog.outputs.tag }}
+          author: ${{ github.event.release.author.login }}
+          release_date: ${{ github.event.repository.updated_at}}
+          release_version: ${{ steps.changelog.outputs.version }}
+        with:
+          filename: .github/templates/issue.md
+
+  unit-tests:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - name: Install packages
+        run: npm ci
+      - name: Execute unit tests
+        run: npm run test-ci
+      - name: Save tests result
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-tests
+          path: './test-report.html'
+  e2e-tests:
+    name: e2e tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20.x'
+      - name: Install packages
+        run: npm ci
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Run e2e tests
+        run: npm run e2e
+      - name: Save tests result
+        uses: actions/upload-artifact@v3
+        with:
+          name: e2e-tests
+          path: playwright-report/
+  commit-lint:
+    name: Lint last commit message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20.x'
+      - name: Install packages
+        run: npm ci
+      - name: Run commit check
+        run: npx commitlint --from ${{ github.event.pull_request.head.sha }}~${{ github.event.pull_request.commits }} --to ${{ github.event.pull_request.head.sha }} --verbose
+  build:
+    needs: [unit-tests, e2e-tests, commit-lint]
+    name: Build app
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - name: Install packages
+        run: npm ci
+      - name: Build project
+        run: npm run build
+      - name: Save build
+        uses: actions/upload-artifact@v3
+        with:
+          name: static-site
+          path: build/
+  release:
+    needs: [build]
+    name: Create release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: static-site
+          path: ./build/
+      - uses: TriPSs/conventional-changelog-action@v3
+        with:
+          github-token: "{{ github.token }}"
+          skip-git-pull: true
