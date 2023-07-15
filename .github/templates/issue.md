@@ -1,11 +1,11 @@
 ---
-title: Release {{ payload.sender.login }}
+title: Release {{ env.tag }}
 labels: RELEASE
 ---
 ## Information 
-### Author - {{ env.author }}
-### Date - {{ env.release_date }}
-### Version - {{ env.release_version }}
+### Author - {{ payload.sender.login }}
+### Date - {{ date | date('dddd, MMMM Do') }}
+### Version - {{ env.tag }}
 
 ## Changelog: 
 
