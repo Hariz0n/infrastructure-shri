@@ -7,6 +7,8 @@ jobs:
   create-registry:
     name: Create registry
     runs-on: ubuntu-latest
+    outputs:
+      issue-id: ${{ steps.issue.output.number }}
     steps:
       - uses: actions/checkout@v3
         name: Checkout
@@ -49,12 +51,30 @@ jobs:
       - name: Execute unit tests
         run: npm run test-ci
       - name: Save tests result
+        id: unit-report
         uses: actions/upload-artifact@v3
         with:
           name: unit-tests
           path: './test-report.html'
+      - name: getOutputs
+        run: echo ${{ steps.unit-report.output }}
       - uses: peter-evans/create-or-update-comment@v3.0.2
-        name: Create or Update Comment
+        if: ${{ success() }}
+        name: Add success test report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issue-id }}
+          body: |
+            ## Unit tests are passed
+
+          reactions: eyes
+      - uses: peter-evans/create-or-update-comment@v3.0.2
+        if: ${{ failure() }}
+        name: Add failure test report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issue-id }}
+          body: |
+            ## Unit tests are not passed
+          reactions: eyes
 
   e2e-tests:
     needs: [create-registry]
