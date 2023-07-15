@@ -1,5 +1,6 @@
 ---
-title: Release {{ env.release_version }}
-assignees: {{ payload.sender.login }}
-labels: RELEASE
+title: Someone just pushed
+assignees: Hariz0n
+labels: bug, enhancement
 ---
+Someone just pushed, oh no! Here's who did it: {{ payload.sender.login }}.
