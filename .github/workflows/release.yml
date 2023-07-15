@@ -104,6 +104,22 @@ jobs:
         with:
           name: e2e-tests
           path: playwright-report/
+      - uses: peter-evans/create-or-update-comment@v3.0.2
+        if: steps.unit-tests.outcome == 'success'
+        name: Add success test report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          body: |
+            ## E2E tests are passed
+          reactions: eyes
+      - uses: peter-evans/create-or-update-comment@v3.0.2
+        if: steps.unit-tests.outcome == 'failure'
+        name: Add failure test report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          body: |
+            ## E2E tests are not passed
+          reactions: eyes
   commit-lint:
     needs: [create-registry]
     name: Lint last commit message
@@ -121,6 +137,22 @@ jobs:
         run: npm ci
       - name: Run commit check
         run: npx commitlint --from HEAD~1 --to HEAD --verbose
+      - uses: peter-evans/create-or-update-comment@v3.0.2
+        if: steps.unit-tests.outcome == 'success'
+        name: Add success lint commit report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          body: |
+            ## Lint tests are passed
+          reactions: eyes
+      - uses: peter-evans/create-or-update-comment@v3.0.2
+        if: steps.unit-tests.outcome == 'failure'
+        name: Add failure lint commit report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          body: |
+            ## Lint tests are not passed
+          reactions: eyes
   build:
     needs: [unit-tests, e2e-tests, commit-lint, create-registry]
     name: Build app
@@ -161,7 +193,7 @@ jobs:
             ## Project is not built
           reactions: eyes
   deploy:
-    needs: [build]
+    needs: [build, create-registry]
     name: Deploy on
     runs-on: ubuntu-latest
     steps:
