@@ -217,7 +217,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           body: |
             # Changelog
-            ${{ jobs.create-registry.outputs.changelog.clean_changelog }}
+            ${{ needs.create-registry.outputs.changelog.clean_changelog }}
           draft: false
           prerelease: false
       - name: Upload Release Asset
