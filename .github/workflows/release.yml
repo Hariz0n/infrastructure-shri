@@ -9,6 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       issueid: ${{ steps.issue.outputs.number }}
+      changelog: ${{ steps.changelog.outputs }}
     steps:
       - uses: actions/checkout@v3
         name: Checkout
@@ -33,6 +34,12 @@ jobs:
           update_existing: true
           search_existing: all
           filename: .github/templates/issue.md
+      - uses: izhangzhihao/delete-comment@master
+        name: Delete previous comments
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          delete_user_name: github-actions[bot]
+          issue_number: ${{ steps.issue.outputs.number }}
   unit-tests:
     needs: [create-registry]
     name: Run unit tests
@@ -73,7 +80,6 @@ jobs:
           body: |
             ## Unit tests are not passed
           reactions: eyes
-
   e2e-tests:
     needs: [create-registry]
     name: e2e tests
@@ -84,7 +90,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '20.x'
       - name: Install packages
@@ -108,7 +114,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Node
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
           node-version: '20.x'
       - name: Install packages
@@ -131,12 +137,29 @@ jobs:
       - name: Install packages
         run: npm ci
       - name: Build project
+        id: build
         run: npm run build
       - name: Save build
         uses: actions/upload-artifact@v3
         with:
           name: static-site
           path: build/
+      - uses: peter-evans/create-or-update-comment@v3.0.2
+        if: steps.build.outcome == 'success'
+        name: Add success test report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          body: |
+            ## Unit tests are passed
+          reactions: eyes
+      - uses: peter-evans/create-or-update-comment@v3.0.2
+        if: steps.build.outcome == 'failure'
+        name: Add failure test report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          body: |
+            ## Unit tests are not passed
+          reactions: eyes
   deploy:
     needs: [build]
     name: Deploy on
@@ -149,6 +172,73 @@ jobs:
           path: page/
       - uses: peaceiris/actions-gh-pages@v3
         name: Deploy on github pages
+        id: deploy
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./page
+      - uses: peter-evans/create-or-update-comment@v3.0.2
+        if: steps.deploy.outcome == 'success'
+        name: Add success test report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          body: |
+            ## Project deployed successfully
+            Website url: https://hariz0n.github.io/infrastructure-shri/
+          reactions: eyes
+      - uses: peter-evans/create-or-update-comment@v3.0.2
+        if: steps.deploy.outcome == 'failure'
+        name: Add failure test report to registry
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          body: |
+            ## Project is not deployed
+          reactions: eyes
+  create-release:
+    runs-on: ubuntu-latest
+    name: Create release
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - uses: actions/download-artifact@v3
+        with:
+          name: static-site
+          path: ./build
+
+      - name: Zip project
+        run: |
+          zip --junk-paths ./build
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: Release ${{ github.ref }}
+          body: |
+            # Changelog
+            ${{ jobs.create-registry.outputs.changelog.clean_changelog }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./static-site.zip
+          asset_name: build.zip
+          asset_content_type: application/zip
+  close-registry:
+    name: Close registry
+    needs: [deploy, create-registry]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Close Issue
+        uses: peter-evans/close-issue@v3
+        with:
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          comment: |
+            # Build have been released successfully
+            Closing registry
