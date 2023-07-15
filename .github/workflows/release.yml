@@ -49,6 +49,7 @@ jobs:
       - name: Install packages
         run: npm ci
       - name: Execute unit tests
+        id: unit-tests
         run: npm run test-ci
       - name: Save tests result
         id: unit-report
@@ -56,19 +57,16 @@ jobs:
         with:
           name: unit-tests
           path: './test-report.html'
-      - name: getOutputs
-        run: echo ${{ steps.unit-report.output }}
       - uses: peter-evans/create-or-update-comment@v3.0.2
-        if: ${{ success() }}
+        if: steps.unit-tests.outcome == 'success'
         name: Add success test report to registry
         with:
-          issue-number: ${{ needs.create-registry.outputs.issue-id }}
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are passed
-
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
-        if: ${{ failure() }}
+        if: steps.unit-tests.outcome == 'failure'
         name: Add failure test report to registry
         with:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
