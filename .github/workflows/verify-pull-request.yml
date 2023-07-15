@@ -1,0 +1,65 @@
+name: 'Verify pull request'
+on: [pull_request]
+jobs:
+  unit-tests:
+    name: Run unit tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20.x'
+      - name: Install packages
+        run: npm ci
+      - name: Execute unit tests
+        run: npm run test-ci
+      - name: Save tests result
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-tests
+          path: './test-report.html'
+  e2e-test:
+    name: e2e tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20.x'
+      - name: Install packages
+        run: npm ci
+      - name: Install Playwright
+        run: npx playwright install --with-deps chromium
+      - name: Run e2e tests
+        run: npm run e2e
+      - name: Save tests result
+        uses: actions/upload-artifact@v3
+        with:
+          name: e2e-tests
+          path: playwright-report/
+  commit-lint:
+    name: Lint last commit message
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Setup Node
+        uses: actions/setup-node@v2
+        with:
+          node-version: '20.x'
+      - name: Install packages
+        run: npm ci
+      - name: Run commit check
+        run: npx commitlint -f HEAD~1 --verbose
+
+
