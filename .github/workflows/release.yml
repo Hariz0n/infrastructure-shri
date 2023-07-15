@@ -122,7 +122,7 @@ jobs:
       - name: Run commit check
         run: npx commitlint --from HEAD~1 --to HEAD --verbose
   build:
-    needs: [unit-tests, e2e-tests, commit-lint]
+    needs: [unit-tests, e2e-tests, commit-lint, create-registry]
     name: Build app
     runs-on: ubuntu-latest
     steps:
@@ -146,19 +146,19 @@ jobs:
           path: build/
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.build.outcome == 'success'
-        name: Add success test report to registry
+        name: Add success build message to registry
         with:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
-            ## Unit tests are passed
+            ## Project built successfully
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.build.outcome == 'failure'
-        name: Add failure test report to registry
+        name: Add failure build message to registry
         with:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
-            ## Unit tests are not passed
+            ## Project is not built
           reactions: eyes
   deploy:
     needs: [build]
@@ -194,7 +194,7 @@ jobs:
             ## Project is not deployed
           reactions: eyes
   create-release:
-    needs: [create-registry, build]
+    needs: [create-registry, build, deploy]
     runs-on: ubuntu-latest
     name: Create release
     steps:
