@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       issueid: ${{ steps.issue.outputs.number }}
-      changelog: ${{ steps.changelog.outputs }}
+      changelog: ${{ steps.changelog.outputs.clean_changelog }}
     steps:
       - uses: actions/checkout@v3
         name: Checkout
@@ -194,6 +194,7 @@ jobs:
             ## Project is not deployed
           reactions: eyes
   create-release:
+    needs: [create-registry, build]
     runs-on: ubuntu-latest
     name: Create release
     steps:
@@ -203,7 +204,6 @@ jobs:
         with:
           name: static-site
           path: ./build
-
       - name: Zip project
         run: |
           zip --junk-paths ./build
@@ -217,7 +217,7 @@ jobs:
           release_name: Release ${{ github.ref }}
           body: |
             # Changelog
-            ${{ needs.create-registry.outputs.changelog.clean_changelog }}
+            ${{ needs.create-registry.outputs.changelog }}
           draft: false
           prerelease: false
       - name: Upload Release Asset
