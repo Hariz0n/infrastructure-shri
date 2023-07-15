@@ -1,3 +1,4 @@
+name: Release
 on:
   push:
     tags:
@@ -21,7 +22,7 @@ jobs:
       - uses: JasonEtco/create-an-issue@v2.9.1
         name: Create an issue
         env:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           changelog: ${{ steps.changelog.outputs.clean_changelog }}
           tag: ${{ steps.changelog.outputs.tag }}
           author: ${{ github.event.release.author.login }}
