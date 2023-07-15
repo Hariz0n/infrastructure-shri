@@ -98,6 +98,7 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
       - name: Run e2e tests
+        id: e2e-tests
         run: npm run e2e
       - name: Save tests result
         uses: actions/upload-artifact@v3
@@ -105,7 +106,7 @@ jobs:
           name: e2e-tests
           path: playwright-report/
       - uses: peter-evans/create-or-update-comment@v3.0.2
-        if: steps.unit-tests.outcome == 'success'
+        if: steps.e2e-tests.outcome == 'success'
         name: Add success test report to registry
         with:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
@@ -113,7 +114,7 @@ jobs:
             ## E2E tests are passed
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
-        if: steps.unit-tests.outcome == 'failure'
+        if: steps.e2e-tests.outcome == 'failure'
         name: Add failure test report to registry
         with:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
@@ -136,9 +137,10 @@ jobs:
       - name: Install packages
         run: npm ci
       - name: Run commit check
+        id: commit-check
         run: npx commitlint --from HEAD~1 --to HEAD --verbose
       - uses: peter-evans/create-or-update-comment@v3.0.2
-        if: steps.unit-tests.outcome == 'success'
+        if: steps.commit-check.outcome == 'success'
         name: Add success lint commit report to registry
         with:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
@@ -146,7 +148,7 @@ jobs:
             ## Lint tests are passed
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
-        if: steps.unit-tests.outcome == 'failure'
+        if: steps.commit-check.outcome == 'failure'
         name: Add failure lint commit report to registry
         with:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
@@ -238,7 +240,7 @@ jobs:
           path: ./build
       - name: Zip project
         run: |
-          zip --junk-paths ./build
+          zip -r build.zip ./build
       - name: Create Release
         id: create_release
         uses: actions/create-release@v1
@@ -259,12 +261,12 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./static-site.zip
+          asset_path: ./build.zip
           asset_name: build.zip
           asset_content_type: application/zip
   close-registry:
     name: Close registry
-    needs: [deploy, create-registry]
+    needs: [deploy, create-registry, create-release]
     runs-on: ubuntu-latest
     steps:
       - name: Close Issue
