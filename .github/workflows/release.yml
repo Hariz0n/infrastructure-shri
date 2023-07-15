@@ -71,7 +71,7 @@ jobs:
         if: ${{ failure() }}
         name: Add failure test report to registry
         with:
-          issue-number: ${{ needs.create-registry.outputs.issue-id }}
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are not passed
           reactions: eyes
