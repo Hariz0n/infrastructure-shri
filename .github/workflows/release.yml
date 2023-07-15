@@ -24,10 +24,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           changelog: ${{ steps.changelog.outputs.clean_changelog }}
-          tag: ${{ steps.changelog.outputs.tag }}
-          author: ${{ github.event.release.author.login }}
-          release_date: ${{ github.event.repository.updated_at}}
-          release_version: ${{ steps.changelog.outputs.version }}
         with:
           assignees: ${{ github.event.release.author.login }}
           update_existing: true
