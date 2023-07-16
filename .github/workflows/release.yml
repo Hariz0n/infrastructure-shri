@@ -68,6 +68,7 @@ jobs:
       - name: Save output to var
         id: unit-tests
         run: |
+          cat unit.txt
           TEXT=$(cat unit.txt | sed 's/> //' | tr "\n" "  \n")
           echo "TEXT<<EOF" >> $GITHUB_ENV
           echo $TEXT >> $GITHUB_ENV
