@@ -9,25 +9,30 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       issueid: ${{ steps.issue.outputs.number }}
-      changelog: ${{ steps.changelog.outputs.clean_changelog }}
+      changelog: ${{ steps.changelog.outputs.changes }}
     steps:
       - uses: actions/checkout@v3
         name: Checkout
         with:
           fetch-depth: 0
-      - uses: TriPSs/conventional-changelog-action@v3
+      - uses: younited/get-previous-tag-action@v1.0.0
+        id: previousTag
+        with:
+          match: v*
+      - uses: requarks/changelog-action@v1
         name: Conventional Changelog Action
         id: changelog
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          skip-git-pull: "true"
-          output-file: "false"
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fromTag: ${{ github.ref_name }}
+          toTag: ${{ steps.previousTag.outputs.previous-tag }}
+          writeToFile: false
       - uses: JasonEtco/create-an-issue@v2.9.1
         name: Create an issue
         id: issue
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          changelog: ${{ steps.changelog.outputs.clean_changelog }}
+          changelog: ${{ steps.changelog.outputs.changes }}
           tag: ${{ github.ref_name }}
         with:
           assignees: "${{ github.event.release.author.login }}"
@@ -159,7 +164,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Lint tests are not passed
-            ${{ join(steps.commit-check.outputs.*, '\n') }}
+            https://hariz0n.github.io/infrastructure-shri/
           reactions: eyes
   build:
     needs: [unit-tests, e2e-tests, commit-lint, create-registry]
