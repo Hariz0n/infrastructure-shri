@@ -188,10 +188,10 @@ jobs:
         if: steps.build.outcome == 'success'
         name: Add success build message to registry
         with:
-          issue-number: ${{ needs.build.outputs.issueid }}
+          issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Project built successfully
-            ${{ join(steps.commit-check.outputs.*, '\n') }}
+            ${{ join(steps.build.outputs.*, '\n') }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.build.outcome == 'failure'
