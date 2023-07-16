@@ -69,9 +69,9 @@ jobs:
         id: unit-tests
         run: |
           TEXT=$(cat unit.txt)
-          echo "text<<EOF" >> $GITHUB_OUTPUT
-          echo $TEXT >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "text<<EOF" >> $GITHUB_ENV
+          echo $TEXT >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
       - name: Save tests result
         id: unit-report
         uses: actions/upload-artifact@v3
@@ -94,7 +94,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are not passed
-            ${{ steps.unit-tests.outputs.text }}
+            ${{ steps.unit-tests.outputs.text | sed 's/> //' | tr "\n" "  \n"}}
           reactions: eyes
   e2e-tests:
     needs: [create-registry]
