@@ -168,7 +168,7 @@ jobs:
       - name: Save output to var
         id: e2e-tests
         run: |
-          TEXT="$(cat commitlint.txt | tail -n +5)"
+          TEXT="$(cat commitlint.txt)"
           echo "CMTL<<EOF" >> $GITHUB_ENV
           echo "$TEXT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
