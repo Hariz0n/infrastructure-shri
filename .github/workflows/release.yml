@@ -62,13 +62,16 @@ jobs:
       - name: Install packages
         run: npm ci
       - name: Execute unit tests
+        run: |
+          npm run test | tee unit.txt
+        shell: bash
+      - name: Save output to var
         id: unit-tests
         run: |
-          TEXT=$( npm run test-ci | tee /dev/null )
+          TEXT=$(cat unit.txt)
           echo "text<<EOF" >> $GITHUB_OUTPUT
           echo $TEXT >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-        shell: bash
       - name: Save tests result
         id: unit-report
         uses: actions/upload-artifact@v3
