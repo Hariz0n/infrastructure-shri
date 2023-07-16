@@ -34,6 +34,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           changelog: ${{ steps.changelog.outputs.changes }}
           tag: ${{ github.ref_name }}
+          previousTag: ${{ steps.previousTag.outputs.previous-tag }}
         with:
           assignees: "${{ github.event.release.author.login }}"
           update_existing: true
@@ -62,7 +63,8 @@ jobs:
         run: npm ci
       - name: Execute unit tests
         id: unit-tests
-        run: npm run test-ci
+        run: |
+          echo "text=$(npm run test-ci)" >> $GITHUB_OUTPUT
       - name: Save tests result
         id: unit-report
         uses: actions/upload-artifact@v3
@@ -76,7 +78,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are passed
-            ${{ join(steps.unit-tests.outputs.*, '\n') }}
+            ${{ steps.unit-tests.outputs.text }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.unit-tests.outcome == 'failure'
