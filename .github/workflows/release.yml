@@ -63,7 +63,7 @@ jobs:
         run: npm ci
       - name: Execute unit tests
         run: |
-          npm run test | tee unit.txt
+          npm run test-ci 2>&1| tee unit.txt
         shell: bash
       - name: Save output to var
         id: unit-tests
