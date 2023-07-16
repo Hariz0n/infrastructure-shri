@@ -185,7 +185,7 @@ jobs:
           name: static-site
           path: build/
       - uses: peter-evans/create-or-update-comment@v3.0.2
-        if: steps.build.outcome == 'success'
+        if: ${{ success() }}
         name: Add success build message to registry
         with:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
@@ -194,7 +194,7 @@ jobs:
             ${{ join(steps.build.outputs.*, '\n') }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
-        if: steps.build.outcome == 'failure'
+        if: ${{ failure() }}
         name: Add failure build message to registry
         with:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
@@ -204,20 +204,20 @@ jobs:
           reactions: eyes
   deploy:
     needs: [build, create-registry]
-    name: Deploy on
+    name: Deploy on github pages
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/deploy-pages@v2
+      - uses: actions/download-artifact@v3
+        name: Download build
+        with:
+          name: static-site
+          path: page/
+      - uses: peaceiris/actions-gh-pages@v3
         name: Deploy on github pages
         id: deploy
         with:
-          artifact_name: static-site
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./page
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.deploy.outcome == 'success'
         name: Add success test report to registry
