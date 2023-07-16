@@ -64,7 +64,7 @@ jobs:
       - name: Execute unit tests
         id: unit-tests
         run: |
-          TEXT=${npm rum test}
+          TEXT=$(npm rum test)
           echo "text<<EOF" >> $GITHUB_OUTPUT
           echo $TEXT >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
