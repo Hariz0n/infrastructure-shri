@@ -207,7 +207,16 @@ jobs:
         run: npm ci
       - name: Build project
         id: build
-        run: npm run build
+        run: | 
+          npm run build 2>&1| tee build.txt
+        shell: bash
+      - name: Save output to var
+        id: e2e-tests
+        run: |
+          TEXT="$(cat build.txt | tail -n +5)"
+          echo "BUILD<<EOF" >> $GITHUB_ENV
+          echo "$TEXT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
       - name: Save build
         uses: actions/upload-artifact@v3
         with:
@@ -220,7 +229,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Project built successfully
-            ${{ join(steps.build.outputs.*, '\n') }}
+            ${{ env.BUILD }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: ${{ failure() }}
@@ -229,7 +238,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Project is not built
-            ${{ join(steps.build.outputs.*, '\n') }}
+            ${{ env.BUILD }}
           reactions: eyes
   deploy:
     needs: [build, create-registry]
@@ -254,7 +263,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Project deployed successfully
-            Website url: ${{ steps.deploy.outputs.page_url }}
+            Website url: https://hariz0n.github.io/infrastructure-shri/
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.deploy.outcome == 'failure'
