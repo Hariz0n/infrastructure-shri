@@ -69,7 +69,7 @@ jobs:
         id: unit-tests
         run: |
           TEXT=$(cat unit.txt)
-          echo "text<<EOF" >> $GITHUB_ENV
+          echo "TEXT<<EOF" >> $GITHUB_ENV
           echo $TEXT >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
       - name: Save tests result
@@ -94,7 +94,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are not passed
-            ${{ steps.unit-tests.outputs.text | sed 's/> //' | tr "\n" "  \n"}}
+            ${{ env.TEXT | sed 's/> //' | tr "\n" "  \n"}}
           reactions: eyes
   e2e-tests:
     needs: [create-registry]
