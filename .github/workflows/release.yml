@@ -71,6 +71,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are passed
+            ${{ join(steps.unit-tests.outputs.*, '\n') }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.unit-tests.outcome == 'failure'
@@ -79,6 +80,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are not passed
+            ${{ join(steps.unit-tests.outputs.*, '\n') }}
           reactions: eyes
   e2e-tests:
     needs: [create-registry]
@@ -112,6 +114,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## E2E tests are passed
+            ${{ join(steps.e2e-tests.outputs.*, '\n') }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.e2e-tests.outcome == 'failure'
@@ -120,6 +123,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## E2E tests are not passed
+            ${{ join(steps.e2e-tests.outputs.*, '\n') }}
           reactions: eyes
   commit-lint:
     needs: [create-registry]
@@ -146,6 +150,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Lint tests are passed
+            ${{ join(steps.commit-check.outputs.*, '\n') }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.commit-check.outcome == 'failure'
@@ -154,6 +159,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Lint tests are not passed
+            ${{ join(steps.commit-check.outputs.*, '\n') }}
           reactions: eyes
   build:
     needs: [unit-tests, e2e-tests, commit-lint, create-registry]
@@ -182,9 +188,10 @@ jobs:
         if: steps.build.outcome == 'success'
         name: Add success build message to registry
         with:
-          issue-number: ${{ needs.create-registry.outputs.issueid }}
+          issue-number: ${{ needs.build.outputs.issueid }}
           body: |
             ## Project built successfully
+            ${{ join(steps.commit-check.outputs.*, '\n') }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.build.outcome == 'failure'
@@ -193,23 +200,24 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Project is not built
+            ${{ join(steps.build.outputs.*, '\n') }}
           reactions: eyes
   deploy:
     needs: [build, create-registry]
     name: Deploy on
     runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
-      - uses: actions/download-artifact@v3
-        name: Download build
-        with:
-          name: static-site
-          path: page/
-      - uses: peaceiris/actions-gh-pages@v3
+      - uses: actions/deploy-pages@v2
         name: Deploy on github pages
         id: deploy
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./page
+          artifact_name: static-site
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.deploy.outcome == 'success'
         name: Add success test report to registry
@@ -217,7 +225,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Project deployed successfully
-            Website url: https://hariz0n.github.io/infrastructure-shri/
+            Website url: ${{ steps.deploy.outputs.page_url }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.deploy.outcome == 'failure'
