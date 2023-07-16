@@ -85,7 +85,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are passed
-            ${{ steps.unit-tests.outputs.text }}
+            ${{ env.TEXT }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.unit-tests.outcome == 'failure'
