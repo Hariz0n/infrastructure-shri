@@ -63,8 +63,8 @@ jobs:
         run: npm ci
       - name: Execute unit tests
         id: unit-tests
-        run: |
-          echo "text=$(npm run test-ci)" >> $GITHUB_OUTPUT
+        run: echo "random-id=$(npm run test-ci)" >> $GITHUB_OUTPUT
+        shell: bash
       - name: Save tests result
         id: unit-report
         uses: actions/upload-artifact@v3
