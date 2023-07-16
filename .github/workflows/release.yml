@@ -69,7 +69,7 @@ jobs:
         id: unit-tests
         run: |
           TEXT="$(cat unit.txt | tail -n +5)"
-          echo "TEXT<<EOF" >> $GITHUB_ENV
+          echo "UNIT<<EOF" >> $GITHUB_ENV
           echo "$TEXT" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
       - name: Save tests result
@@ -85,7 +85,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are passed
-            ${{ env.TEXT }}
+            ${{ env.UNIT }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.unit-tests.outcome == 'failure'
@@ -94,7 +94,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Unit tests are not passed
-            ${{ env.TEXT }}
+            ${{ env.UNIT }}
           reactions: eyes
   e2e-tests:
     needs: [create-registry]
@@ -114,8 +114,16 @@ jobs:
       - name: Install Playwright
         run: npx playwright install --with-deps chromium
       - name: Run e2e tests
+        run: |
+          npm run e2e 2>&1| tee e2e.txt
+        shell: bash
+      - name: Save output to var
         id: e2e-tests
-        run: npm run e2e
+        run: |
+          TEXT="$(cat e2e.txt | tail -n +5)"
+          echo "E2E<<EOF" >> $GITHUB_ENV
+          echo "$TEXT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
       - name: Save tests result
         uses: actions/upload-artifact@v3
         with:
@@ -128,7 +136,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## E2E tests are passed
-            ${{ join(steps.e2e-tests.outputs.*, '\n') }}
+            ${{ env.E2E }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.e2e-tests.outcome == 'failure'
@@ -137,7 +145,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## E2E tests are not passed
-            ${{ join(steps.e2e-tests.outputs.*, '\n') }}
+            ${{ env.E2E }}
           reactions: eyes
   commit-lint:
     needs: [create-registry]
@@ -156,7 +164,14 @@ jobs:
         run: npm ci
       - name: Run commit check
         id: commit-check
-        run: npx commitlint --from HEAD~1 --to HEAD --verbose
+        run: npx commitlint --from HEAD~1 --to HEAD --verbose 2>&1| tee commitlint.txt
+      - name: Save output to var
+        id: e2e-tests
+        run: |
+          TEXT="$(cat commitlint.txt | tail -n +5)"
+          echo "CMTL<<EOF" >> $GITHUB_ENV
+          echo "$TEXT" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.commit-check.outcome == 'success'
         name: Add success lint commit report to registry
@@ -164,7 +179,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Lint tests are passed
-            ${{ join(steps.commit-check.outputs.*, '\n') }}
+            ${{ env.CMTL }}
           reactions: eyes
       - uses: peter-evans/create-or-update-comment@v3.0.2
         if: steps.commit-check.outcome == 'failure'
@@ -173,7 +188,7 @@ jobs:
           issue-number: ${{ needs.create-registry.outputs.issueid }}
           body: |
             ## Lint tests are not passed
-            https://hariz0n.github.io/infrastructure-shri/
+            ${{ env.CMTL }}
           reactions: eyes
   build:
     needs: [unit-tests, e2e-tests, commit-lint, create-registry]
